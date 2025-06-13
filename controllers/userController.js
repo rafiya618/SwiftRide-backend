@@ -41,7 +41,7 @@ export const register = async (req, res) => {
 
     await newUser.save();
 
-    const token = jwt.sign({ id: newUser._id }, "carpool", { expiresIn: '1d' });
+    const token = jwt.sign({ id: newUser._id }, 'swiftride', { expiresIn: '1d' });
 
     res.status(201).json({
       message: 'User registered successfully',
@@ -79,7 +79,7 @@ export const login = async (req, res) => {
     // Generate JWT token with role included in the payload
     const token = jwt.sign(
       { id: user._id, role: user.role }, // Payload includes both ID and role
-      'carpool', // Secret key
+      'swiftride', // Secret key
       { expiresIn: '1h' } // Token expiration time
     );
 
@@ -94,7 +94,7 @@ export const login = async (req, res) => {
   }
 };
 
-// New function to fetch drivers details
+// fetch drivers
 export const getAllDrivers = async (req, res) => {
   try {
     const drivers = await User.find({ role: 'driver' });
@@ -117,47 +117,5 @@ export const getDriverById = async (req, res) => {
     res.status(200).json(driver);
   } catch (error) {
     res.status(500).json({ message: 'Error fetching driver', error });
-  }
-};
-
-export const updateLocation = async (req, res) => {
-  const { id, lng, lat } = req.body;
-
-  try {
-    if (typeof lng !== 'number' || typeof lat !== 'number') {
-      return res.status(400).json({ message: 'Longitude and latitude must be numbers' });
-    }
-
-    const user = await User.findByIdAndUpdate(id, {
-      location: {
-        type: 'Point',
-        coordinates: [lng, lat],
-      },
-    }, { new: true });
-
-    res.status(200).json({ message: 'Location updated successfully', user });
-  } catch (error) {
-    res.status(500).json({ message: 'Failed to update location', error });
-  }
-};
-
-export const driversNearby = async (req, res) => {
-  const { lng, lat } = req.query;
-  try {
-    const drivers = await User.find({
-      role: 'driver',
-      location: {
-        $near: {
-          $geometry: {
-            type: 'Point',
-            coordinates: [lng, lat],
-          },
-          $maxDistance: 10000, // 10km radius
-        },
-      },
-    });
-    res.status(200).json(drivers);
-  } catch (error) {
-    res.status(500).json({ message: 'Failed to fetch nearby drivers', error });
   }
 };

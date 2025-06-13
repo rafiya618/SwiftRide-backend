@@ -1,26 +1,28 @@
 // middleware/authMiddleware.js
 import jwt from 'jsonwebtoken';
 
-const secretKey = process.env.JWT_SECRET // Ensure this matches the key used to sign the tokens
+const secretKey = process.env.JWT_SECRET || 'swiftride'; // Must match the secret used during token creation
 
 const authMiddleware = (req, res, next) => {
-    console.log('Auth middleware hit'); // Debug log
-    const token = req.headers.authorization?.split(' ')[1];
-    console.log('Token:', token); // Log the token
+    console.log('Auth middleware hit');
+    const authHeader = req.headers.authorization;
 
-    if (!token) {
-        console.log('No token provided'); // Debug log
+    if (!authHeader || !authHeader.startsWith('Bearer ')) {
+        console.log('No token provided in Authorization header');
         return res.status(401).json({ message: 'No token provided' });
     }
 
+    const token = authHeader.split(' ')[1];
+    console.log('Token received:', token);
+
     try {
-        const decoded = jwt.verify(token, secretKey); // Verify the token
-        console.log('Decoded Token:', decoded); // Log the decoded token
-        req.user = decoded; // Attach the decoded token payload to the request
-        next(); // Proceed to the next middleware or route handler
+        const decoded = jwt.verify(token, secretKey);
+        console.log('Decoded Token:', decoded);
+        req.user = decoded; // Attach user info to request
+        next(); // Proceed to the controller
     } catch (error) {
-        console.error('Token Verification Error:', error); // Log error details
-        res.status(401).json({ message: 'Invalid token' }); // Respond with an error if verification fails
+        console.error('Token verification failed:', error.message);
+        return res.status(401).json({ message: 'Invalid or expired token' });
     }
 };
 
