@@ -101,3 +101,30 @@ export const endRide = async (req, res) => {
     res.status(500).json({ error: 'Failed to complete ride' });
   }
 };
+
+export const cancelRide = async (req, res) => {
+  try {
+    const { rideId } = req.params;
+    const userId = req.user.id;
+
+    // Find the ride
+    const ride = await Ride.findById(rideId);
+    if (!ride) {
+      return res.status(404).json({ error: 'Ride not found' });
+    }
+
+    // Only the driver can cancel the ride
+    if (!ride.driver.equals(userId)) {
+      return res.status(403).json({ error: 'You are not authorized to cancel this ride' });
+    }
+
+    // Update the ride status to 'cancelled'
+    ride.status = 'cancelled';
+    await ride.save();
+
+    res.status(200).json({ message: 'Ride has been cancelled', ride });
+  } catch (error) {
+    console.error('Error cancelling ride:', error);
+    res.status(500).json({ error: 'Failed to cancel ride' });
+  }
+};
